@@ -1,0 +1,95 @@
+# music - custom web front-end for Navidrome.
+#
+#   music-web : nginx serving ./web (static SPA) and reverse-proxying, same-origin,
+#               /rest/* -> Navidrome (OpenSubsonic API) and /api/* -> music-api.
+#   music-api : tiny Node service for what OpenSubsonic cannot do: delete a song
+#               file, and add songs (runs add_musics.sh -> yt-dlp and streams its
+#               output to the UI). It re-checks the caller's Subsonic credentials
+#               against Navidrome (must be an admin) and triggers a rescan. It is the ONLY thing with /music mounted rw. The real
+#               file path comes from Navidrome's DB (mounted read-only) because the
+#               Subsonic API only exposes a virtual path.
+#
+# Both join navidrome's compose network so they reach it as http://navidrome:4533
+# without going through the published (proxy-only firewalled) port.
+#
+# restart: on-failure:5 so boot start is owned by music-compose.service,
+# which is gated on the pool (music-api touches /mnt/storage).
+# Start gate: every bind mount below uses create_host_path: false, so a container
+# cannot start (or create an empty dir on the root fs) while its folder is missing.
+# /run/storage-pool-ready is a marker touched by aux/scripts/startup/wait-for-pool.sh
+# only once the whole pool is assembled (tmpfs: gone after every reboot). Containers
+# that use the pool mount it, so even dockerd's own post-power-cut restart cannot
+# bring them up early; <name>-compose.service starts them after the gate passes.
+name: music
+
+services:
+  music-web:
+    container_name: music-web
+    image: nginxinc/nginx-unprivileged@${WEB_DIGEST:-sha256:0c79d56aee561a1d81c63f00eee5fb5fe29279560cdc55e91425133104c7fbe6}
+    ports:
+      - "${WEB_PORT:-4041}:8080"       # host 4041 -> nginx
+    volumes:
+      - type: bind
+        source: ./nginx.conf
+        target: /etc/nginx/conf.d/default.conf
+        read_only: true
+        bind: {create_host_path: false}
+      - type: bind
+        source: ./web
+        target: /usr/share/nginx/html
+        read_only: true
+        bind: {create_host_path: false}
+    read_only: true
+    tmpfs: [/tmp]
+    cap_drop: [ALL]
+    security_opt: ["no-new-privileges:true"]
+    networks: [navidrome]
+    restart: on-failure:5
+
+  music-api:
+    container_name: music-api
+    build: ./api                       # node + bash + ffmpeg + yt-dlp (see api/Dockerfile)
+    image: music-api:local
+    user: "1000:1000"                  # the host user that owns the music files
+    command: ["node", "--disable-warning=ExperimentalWarning", "/app/server.js"]
+    environment:
+      ND_URL: http://navidrome:4533
+      MUSIC_DIR: /music
+      PORT: "3000"
+      ADD_SCRIPT: /scripts/add_musics.sh
+    volumes:
+      - type: bind
+        source: ./api
+        target: /app
+        read_only: true
+        bind: {create_host_path: false}
+      - type: bind                     # rw on purpose: needed to delete songs
+        source: /mnt/storage/music
+        target: /music
+        bind: {create_host_path: false}
+      - type: bind                     # Navidrome's SQLite DB: song id -> real file path
+        source: ../navidrome/data
+        target: /nd
+        read_only: true
+        bind: {create_host_path: false}
+      - type: bind                     # after editing it: docker compose restart music-api
+        source: ./add_musics.sh
+        target: /scripts/add_musics.sh
+        read_only: true
+        bind: {create_host_path: false}
+      - type: bind
+        source: /run/storage-pool-ready
+        target: /run/pool-ready
+        read_only: true
+        bind: {create_host_path: false}
+    read_only: true
+    tmpfs: ["/tmp:size=1g,mode=1777"]  # scratch space for downloads + yt-dlp cache
+    cap_drop: [ALL]
+    security_opt: ["no-new-privileges:true"]
+    networks: [navidrome]
+    restart: on-failure:5
+
+networks:
+  navidrome:
+    name: navidrome_default
+    external: true

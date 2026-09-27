@@ -1,0 +1,22 @@
+[Unit]
+Description=music web UI + API for Navidrome (docker compose stack)
+Requires=docker.service
+After=docker.service network-online.target navidrome-compose.service
+Wants=network-online.target navidrome-compose.service
+# music-api mounts the library rw, so - like navidrome - never start without the
+# full pool. It also joins navidrome's docker network, hence After=navidrome.
+RequiresMountsFor=/mnt/storage /mnt/disk1 /mnt/disk2 /mnt/disk3
+ConditionPathIsMountPoint=/mnt/storage
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+# @HERE@ / @AUX@ are filled in by deploy.sh when it installs this unit.
+WorkingDirectory=@HERE@
+ExecStartPre=@AUX@/scripts/startup/wait-for-pool.sh
+ExecStart=/usr/bin/docker compose up -d --remove-orphans
+ExecStop=/usr/bin/docker compose down
+TimeoutStartSec=0
+
+[Install]
+WantedBy=multi-user.target

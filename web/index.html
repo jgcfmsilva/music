@@ -1,0 +1,233 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#0a0614">
+  <title>Music</title>
+  <link rel="icon" href="icon.svg" type="image/svg+xml">
+  <link rel="apple-touch-icon" href="apple-touch-icon.png">
+  <link rel="manifest" href="manifest.webmanifest">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-title" content="Music">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<section id="login" class="login" hidden>
+  <form id="login-form" class="login-card" autocomplete="on">
+    <div class="brand"><img class="brand-icon" src="icon.svg" alt=""><span class="brand-name">MUSIC</span></div>
+    <label>Username<input name="username" autocomplete="username" required></label>
+    <label>Password<input name="password" type="password" autocomplete="current-password" required></label>
+    <p id="login-error" class="error" role="alert"></p>
+    <button class="btn primary" type="submit">Sign in</button>
+  </form>
+</section>
+
+<div id="app" class="app" hidden>
+  <div id="scrim" class="scrim"></div>
+
+  <aside id="side" class="side">
+    <div class="brand"><img class="brand-icon" src="icon.svg" alt=""><span class="brand-name">MUSIC</span></div>
+
+    <button id="nav-all" class="nav-item">
+      <span data-icon="music"></span>
+      <span class="grow">All songs</span>
+      <span id="all-count" class="count"></span>
+    </button>
+
+    <div class="side-head">
+      <span>Playlists</span>
+      <button id="new-playlist" class="icon-btn small" title="New playlist" aria-label="New playlist"><span data-icon="plus"></span></button>
+    </div>
+    <div id="playlists" class="playlists"></div>
+
+    <section class="status" aria-label="Server status">
+      <div class="status-head">
+        <span data-icon="server"></span>
+        <span class="grow">Server</span>
+        <span id="st-state" class="pill">…</span>
+      </div>
+      <dl>
+        <div><dt>Navidrome</dt><dd id="st-version">–</dd></div>
+        <div><dt>Latency</dt><dd id="st-ping">–</dd></div>
+        <div><dt>Library</dt><dd id="st-tracks">–</dd></div>
+        <div><dt>Last scan</dt><dd id="st-scan">–</dd></div>
+      </dl>
+      <div class="bar"><i id="st-bar"></i></div>
+      <div id="st-storage" class="storage">–</div>
+    </section>
+
+    <div class="account">
+      <div class="user"><span data-icon="user"></span><span id="whoami"></span></div>
+      <button id="logout" class="signout" title="Sign out"><span data-icon="logout"></span>Sign out</button>
+    </div>
+  </aside>
+
+  <main class="main">
+    <div id="scroller" class="scroller">
+      <header class="top">
+        <button id="menu" class="icon-btn menu-btn" aria-label="Menu"><span data-icon="menu"></span></button>
+        <div class="titles">
+          <h1 id="title">All songs</h1>
+          <p id="subtitle" class="sub"></p>
+        </div>
+        <button id="add-open" class="btn primary">
+          <span data-icon="download"></span>Add music
+          <span id="add-dot" class="run-dot" hidden title="Download running"></span>
+        </button>
+      </header>
+
+      <section id="hero" class="hero" hidden>
+        <div id="hero-cover" class="hero-cover"></div>
+        <div class="hero-body">
+          <div class="eyebrow">Playlist</div>
+          <h2 id="hero-name"></h2>
+          <p id="hero-desc" class="hero-desc" hidden></p>
+          <p id="hero-artists" class="hero-artists"></p>
+          <div id="hero-stats" class="stats"></div>
+          <p id="hero-dates" class="hero-dates"></p>
+          <div class="hero-actions">
+            <button id="hero-play" class="btn primary"><span data-icon="play"></span>Play</button>
+            <button id="hero-shuffle" class="btn"><span data-icon="shuffle"></span>Shuffle</button>
+            <button id="del-playlist" class="btn ghost danger"><span data-icon="trash"></span>Delete</button>
+          </div>
+        </div>
+      </section>
+
+      <div class="tools">
+        <label class="search">
+          <span data-icon="search"></span>
+          <input id="filter" type="text" placeholder="Search songs, artists, albums…  ( / )" autocomplete="off" spellcheck="false" aria-label="Search songs">
+          <button id="filter-clear" type="button" class="icon-btn small" aria-label="Clear search" hidden><span data-icon="x"></span></button>
+        </label>
+        <label class="sort">
+          <span class="sort-label">Sort by</span>
+          <select id="sort" aria-label="Sort by"></select>
+        </label>
+        <button id="sort-dir" class="icon-btn boxed" aria-label="Toggle sort direction"><span data-icon="up"></span></button>
+        <button id="select-toggle" class="icon-btn boxed" title="Select songs" aria-label="Select songs" aria-pressed="false"><span data-icon="select"></span></button>
+      </div>
+
+      <div class="cols head" aria-hidden="true">
+        <span>#</span><span>Title</span><span class="c-artist">Artist</span><span class="c-album">Album</span><span class="c-time">Time</span><span></span>
+      </div>
+      <div id="list" class="list"></div>
+      <p id="empty" class="empty" hidden></p>
+    </div>
+  </main>
+
+  <footer class="player">
+    <button id="now-open" class="now" aria-label="Open now playing" aria-haspopup="dialog">
+      <img id="np-cover" class="cover" alt="" hidden>
+      <div class="np-text">
+        <div id="np-title" class="np-title">Nothing playing</div>
+        <div id="np-artist" class="np-artist"></div>
+      </div>
+    </button>
+    <div class="transport">
+      <div class="buttons">
+        <button id="shuffle" class="icon-btn small" title="Shuffle" aria-label="Shuffle" aria-pressed="false"><span data-icon="shuffle"></span></button>
+        <button id="prev" class="icon-btn" title="Previous" aria-label="Previous"><span data-icon="prev"></span></button>
+        <button id="play" class="play-btn" title="Play" aria-label="Play"><span class="i-play" data-icon="play"></span><span class="i-pause" data-icon="pause"></span></button>
+        <button id="next" class="icon-btn" title="Next" aria-label="Next"><span data-icon="next"></span></button>
+        <button id="repeat" class="icon-btn small" title="Repeat: off" aria-label="Repeat" data-mode="off"><span data-icon="repeat"></span><b class="badge">1</b></button>
+      </div>
+      <div class="seek">
+        <span id="t-cur" class="time">0:00</span>
+        <input id="seek" type="range" min="0" max="1000" value="0" aria-label="Progress">
+        <span id="t-dur" class="time">0:00</span>
+      </div>
+    </div>
+    <div class="volume">
+      <span data-icon="volume"></span>
+      <input id="volume" type="range" min="0" max="100" value="80" aria-label="Volume">
+    </div>
+  </footer>
+</div>
+
+<section id="now-playing" class="now-playing" hidden>
+  <header class="np-fs-head">
+    <button id="np-close" class="icon-btn" aria-label="Close"><span data-icon="down"></span></button>
+    <span class="np-fs-eyebrow">Now Playing</span>
+    <span class="np-fs-head-spacer"></span>
+  </header>
+  <div class="np-fs-body">
+    <div id="np-fs-cover-wrap" class="np-fs-cover-wrap">
+      <img id="np-fs-cover" class="np-fs-cover" alt="" hidden>
+      <span id="np-fs-cover-tile" class="np-fs-cover-tile" hidden><span data-icon="music"></span></span>
+    </div>
+    <div class="np-fs-text">
+      <div id="np-fs-title" class="np-fs-title">Nothing playing</div>
+      <div id="np-fs-artist" class="np-fs-artist"></div>
+    </div>
+    <div class="np-fs-seek">
+      <input id="fs-seek" type="range" min="0" max="1000" value="0" aria-label="Progress">
+      <div class="np-fs-times"><span id="fs-t-cur">0:00</span><span id="fs-t-dur">0:00</span></div>
+    </div>
+    <div class="np-fs-buttons">
+      <button id="fs-shuffle" class="icon-btn" title="Shuffle" aria-label="Shuffle" aria-pressed="false"><span data-icon="shuffle"></span></button>
+      <button id="fs-prev" class="icon-btn lg" title="Previous" aria-label="Previous"><span data-icon="prev"></span></button>
+      <button id="fs-play" class="play-btn lg" title="Play" aria-label="Play"><span class="i-play" data-icon="play"></span><span class="i-pause" data-icon="pause"></span></button>
+      <button id="fs-next" class="icon-btn lg" title="Next" aria-label="Next"><span data-icon="next"></span></button>
+      <button id="fs-repeat" class="icon-btn" title="Repeat: off" aria-label="Repeat" data-mode="off"><span data-icon="repeat"></span><b class="badge">1</b></button>
+    </div>
+    <div class="np-fs-volume">
+      <span data-icon="volume"></span>
+      <input id="fs-volume" type="range" min="0" max="100" value="80" aria-label="Volume">
+    </div>
+  </div>
+</section>
+
+<div id="menu-pop" class="popover" hidden></div>
+
+<dialog id="dlg-confirm" class="dlg">
+  <form method="dialog">
+    <h2 id="confirm-title"></h2>
+    <p id="confirm-text"></p>
+    <div class="dlg-actions">
+      <button class="btn ghost" value="cancel">Cancel</button>
+      <button id="confirm-ok" class="btn danger" value="ok">Delete</button>
+    </div>
+  </form>
+</dialog>
+
+<dialog id="dlg-name" class="dlg">
+  <form method="dialog">
+    <h2>New playlist</h2>
+    <input id="name-input" class="text" placeholder="Name" maxlength="80" required>
+    <div class="dlg-actions">
+      <button class="btn ghost" value="cancel" formnovalidate>Cancel</button>
+      <button class="btn primary" value="ok">Create</button>
+    </div>
+  </form>
+</dialog>
+
+<dialog id="dlg-add" class="dlg dlg-wide">
+  <div class="dlg-head">
+    <h2>Add music</h2>
+    <button id="add-close" class="icon-btn small" type="button" aria-label="Close"><span data-icon="x"></span></button>
+  </div>
+  <form id="add-form" class="add-form" autocomplete="off">
+    <input id="add-input" class="text" placeholder="Song name, e.g. Artist - Title (or a YouTube link)" maxlength="200" required>
+    <button id="add-submit" class="btn primary" type="submit"><span data-icon="download"></span>Add</button>
+  </form>
+  <div class="term-head"><span id="add-state" class="pill idle">Idle</span><span id="add-query" class="term-query"></span></div>
+  <div id="add-log" class="term" role="log" aria-live="polite"><div class="term-line sys">Type a song name above and press Add. The script's output shows up here.</div></div>
+</dialog>
+
+<div id="selbar" class="selbar" role="toolbar" aria-label="Selected songs" hidden>
+  <button id="sel-cancel" class="icon-btn small" title="Cancel" aria-label="Cancel selection"><span data-icon="x"></span></button>
+  <span id="sel-count" class="sel-count" aria-live="polite"></span>
+  <button id="sel-all" class="btn ghost"></button>
+  <button id="sel-add" class="btn" title="Add to playlist" aria-label="Add to playlist"><span data-icon="list"></span><span class="sel-label">Add to playlist</span></button>
+  <button id="sel-remove" class="btn" title="Remove from this playlist" aria-label="Remove from this playlist"><span data-icon="minus"></span><span class="sel-label">Remove</span></button>
+  <button id="sel-delete" class="btn danger" title="Delete songs" aria-label="Delete songs"><span data-icon="trash"></span><span class="sel-label">Delete</span></button>
+</div>
+<div id="toasts" class="toasts" aria-live="polite"></div>
+<audio id="audio" preload="auto"></audio>
+<script type="module" src="js/app.js"></script>
+</body>
+</html>

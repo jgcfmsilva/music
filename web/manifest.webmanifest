@@ -1,0 +1,20 @@
+{
+  "id": "/",
+  "name": "Music",
+  "short_name": "Music",
+  "description": "Music library player for Navidrome",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "any",
+  "background_color": "#0a0614",
+  "theme_color": "#0a0614",
+  "categories": ["music", "entertainment"],
+  "launch_handler": {"client_mode": "focus-existing"},
+  "icons": [
+    {"src": "icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any"},
+    {"src": "icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any"},
+    {"src": "icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "maskable"},
+    {"src": "icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable"}
+  ]
+}
